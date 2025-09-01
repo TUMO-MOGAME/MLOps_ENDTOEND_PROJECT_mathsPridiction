@@ -1,0 +1,75 @@
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'ml-pipeline@yourcompany.com'
+  smtp_auth_username: 'your-email@gmail.com'
+  smtp_auth_password: 'your-app-password'
+
+route:
+  group_by: ['alertname', 'component']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'web.hook'
+  routes:
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+
+receivers:
+  - name: 'web.hook'
+    webhook_configs:
+      - url: 'http://localhost:5001/alerts'
+        send_resolved: true
+
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'admin@yourcompany.com'
+        subject: 'CRITICAL: ML Pipeline Alert - {{ .GroupLabels.alertname }}'
+        body: |
+          Alert: {{ .GroupLabels.alertname }}
+          Severity: {{ .CommonLabels.severity }}
+          Component: {{ .CommonLabels.component }}
+          
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+        headers:
+          Priority: 'high'
+    
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#ml-alerts'
+        title: 'CRITICAL ML Pipeline Alert'
+        text: |
+          🚨 *CRITICAL ALERT*
+          *Alert:* {{ .GroupLabels.alertname }}
+          *Component:* {{ .CommonLabels.component }}
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+
+  - name: 'warning-alerts'
+    email_configs:
+      - to: 'team@yourcompany.com'
+        subject: 'WARNING: ML Pipeline Alert - {{ .GroupLabels.alertname }}'
+        body: |
+          Alert: {{ .GroupLabels.alertname }}
+          Severity: {{ .CommonLabels.severity }}
+          Component: {{ .CommonLabels.component }}
+          
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'component']

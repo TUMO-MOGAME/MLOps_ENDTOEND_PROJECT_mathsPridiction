@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "name": "ml-pipeline-api",
+  "builds": [
+    {
+      "src": "api/predict.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/predict.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "static/$1"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": "."
+  },
+  "functions": {
+    "api/predict.py": {
+      "maxDuration": 30
+    }
+  }
+}

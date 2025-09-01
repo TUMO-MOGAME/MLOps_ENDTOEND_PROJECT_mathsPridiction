@@ -1,0 +1,35 @@
+artifacts_root: artifacts
+
+data_ingestion:
+  root_dir: artifacts/data_ingestion
+  source_URL: RAWDATA
+  local_data_file: artifacts/data_ingestion/data.csv
+  unzip_dir: artifacts/data_ingestion
+
+data_validation:
+  root_dir: artifacts/data_validation
+  STATUS_FILE: artifacts/data_validation/status.txt
+  ALL_REQUIRED_FILES: ["train_data.csv", "test_data.csv"]
+
+data_transformation:
+  root_dir: artifacts/data_transformation
+  data_path: artifacts/data_ingestion/train_data.csv
+  transformed_train_path: artifacts/data_transformation/train.csv
+  transformed_test_path: artifacts/data_transformation/test.csv
+  preprocessor_path: artifacts/data_transformation/preprocessor.pkl
+
+model_trainer:
+  root_dir: artifacts/model_trainer
+  train_data_path: artifacts/data_transformation/train.csv
+  test_data_path: artifacts/data_transformation/test.csv
+  model_name: model.pkl
+  alpha: 0.001
+  l1_ratio: 0.5
+  target_column: mathematics_score
+
+model_evaluation:
+  root_dir: artifacts/model_evaluation
+  model_path: artifacts/model_trainer/model.pkl
+  train_data_path: artifacts/data_transformation/train.csv
+  test_data_path: artifacts/data_transformation/test.csv
+  evaluation_report_path: artifacts/model_evaluation/evaluation_report.json

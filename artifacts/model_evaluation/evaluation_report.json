@@ -1,0 +1,10 @@
+{
+    "train_rmse": 5.323096836206968,
+    "test_rmse": 5.394377988346398,
+    "train_mae": 4.266645839367169,
+    "test_mae": 4.213968765249189,
+    "train_r2": 0.8743150325681966,
+    "test_r2": 0.8804162685332191,
+    "target_column": "math_score",
+    "model_path": "artifacts/model_trainer/model.pkl"
+}

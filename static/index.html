@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathematics Score Predictor</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .result.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .result.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .monitoring-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .monitoring-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Mathematics Score Predictor</h1>
+        
+        <form id="predictionForm">
+            <div class="form-group">
+                <label for="gender">Gender:</label>
+                <select id="gender" name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="race_ethnicity">Race/Ethnicity:</label>
+                <select id="race_ethnicity" name="race_ethnicity" required>
+                    <option value="">Select Race/Ethnicity</option>
+                    <option value="group A">Group A</option>
+                    <option value="group B">Group B</option>
+                    <option value="group C">Group C</option>
+                    <option value="group D">Group D</option>
+                    <option value="group E">Group E</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="parental_level_of_education">Parental Level of Education:</label>
+                <select id="parental_level_of_education" name="parental_level_of_education" required>
+                    <option value="">Select Education Level</option>
+                    <option value="some high school">Some High School</option>
+                    <option value="high school">High School</option>
+                    <option value="some college">Some College</option>
+                    <option value="associate's degree">Associate's Degree</option>
+                    <option value="bachelor's degree">Bachelor's Degree</option>
+                    <option value="master's degree">Master's Degree</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="lunch">Lunch Type:</label>
+                <select id="lunch" name="lunch" required>
+                    <option value="">Select Lunch Type</option>
+                    <option value="standard">Standard</option>
+                    <option value="free/reduced">Free/Reduced</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="test_preparation_course">Test Preparation Course:</label>
+                <select id="test_preparation_course" name="test_preparation_course" required>
+                    <option value="">Select Preparation</option>
+                    <option value="completed">Completed</option>
+                    <option value="none">None</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="reading_score">Reading Score (0-100):</label>
+                <input type="number" id="reading_score" name="reading_score" min="0" max="100" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="writing_score">Writing Score (0-100):</label>
+                <input type="number" id="writing_score" name="writing_score" min="0" max="100" required>
+            </div>
+            
+            <button type="submit">🔮 Predict Mathematics Score</button>
+        </form>
+        
+        <div class="loading" id="loading">
+            <p>🔄 Predicting your mathematics score...</p>
+        </div>
+        
+        <div id="result"></div>
+        
+        <div class="monitoring-link">
+            <p><a href="https://your-monitoring.vercel.app" target="_blank">📊 View Live Model Performance</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            loading.style.display = 'block';
+            result.innerHTML = '';
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Convert numeric fields
+            data.reading_score = parseInt(data.reading_score);
+            data.writing_score = parseInt(data.writing_score);
+            
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const responseData = await response.json();
+                
+                loading.style.display = 'none';
+                
+                if (responseData.status === 'success') {
+                    result.innerHTML = `
+                        <div class="result success">
+                            🎯 Predicted Mathematics Score: <strong>${Math.round(responseData.prediction)}</strong>
+                            <br><small>Prediction made at ${new Date(responseData.timestamp).toLocaleString()}</small>
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="result error">
+                            ❌ Error: ${responseData.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                result.innerHTML = `
+                    <div class="result error">
+                        ❌ Network Error: ${error.message}
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

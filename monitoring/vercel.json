@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "name": "ml-pipeline-monitoring",
+  "builds": [
+    {
+      "src": "vercel-monitoring.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "vercel-monitoring.py"
+    },
+    {
+      "src": "/",
+      "dest": "vercel-monitoring.py"
+    }
+  ],
+  "env": {
+    "MAIN_API_URL": "https://your-ml-api.vercel.app",
+    "PYTHONPATH": "."
+  },
+  "functions": {
+    "vercel-monitoring.py": {
+      "maxDuration": 30
+    }
+  }
+}

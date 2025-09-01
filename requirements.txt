@@ -1,0 +1,16 @@
+pandas
+numpy
+seaborn
+matplotlib
+xgboost
+scikit-learn
+dill
+Flask
+catboost
+flas
+ipykernel
+ensure
+python-box
+PyYAML
+pandas
+-e .

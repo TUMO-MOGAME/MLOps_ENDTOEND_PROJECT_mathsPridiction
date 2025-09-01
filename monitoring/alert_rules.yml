@@ -1,0 +1,86 @@
+groups:
+  - name: ml_pipeline_alerts
+    rules:
+      # Model Performance Alerts
+      - alert: ModelAccuracyDrop
+        expr: ml_model_r2_score < 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: model
+        annotations:
+          summary: "Model accuracy has dropped below 80%"
+          description: "Model R² score is {{ $value }}, which is below the threshold of 0.8"
+
+      - alert: ModelAccuracyCritical
+        expr: ml_model_r2_score < 0.7
+        for: 2m
+        labels:
+          severity: critical
+          component: model
+        annotations:
+          summary: "Model accuracy critically low"
+          description: "Model R² score is {{ $value }}, which is critically low"
+
+      # Data Quality Alerts
+      - alert: DataIngestionFailure
+        expr: ml_data_ingestion_success == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: data_ingestion
+        annotations:
+          summary: "Data ingestion has failed"
+          description: "Data ingestion pipeline has failed to process data"
+
+      - alert: DataValidationFailure
+        expr: ml_data_validation_success == 0
+        for: 1m
+        labels:
+          severity: warning
+          component: data_validation
+        annotations:
+          summary: "Data validation has failed"
+          description: "Data validation checks have failed"
+
+      # Pipeline Health Alerts
+      - alert: PipelineExecutionTime
+        expr: ml_pipeline_duration_seconds > 300
+        for: 5m
+        labels:
+          severity: warning
+          component: pipeline
+        annotations:
+          summary: "Pipeline execution time is high"
+          description: "Pipeline took {{ $value }} seconds to complete, which is above normal"
+
+      - alert: PipelineFailure
+        expr: ml_pipeline_success == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: pipeline
+        annotations:
+          summary: "ML Pipeline has failed"
+          description: "The ML pipeline execution has failed"
+
+      # System Resource Alerts
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 90%"
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80%"
