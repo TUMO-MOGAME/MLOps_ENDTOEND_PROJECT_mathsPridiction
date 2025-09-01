@@ -115,8 +115,10 @@ def home():
             'message': 'ML Pipeline API',
             'status': 'running',
             'endpoints': {
-                'predict': '/predict (POST)',
-                'health': '/health (GET)'
+                'predict': '/api/predict (POST)',
+                'health': '/api/health (GET)',
+                'predict_alt': '/predict (POST)',
+                'health_alt': '/health (GET)'
             },
             'timestamp': datetime.now().isoformat()
         })
@@ -127,6 +129,7 @@ def home():
         }), 500
 
 @app.route('/predict', methods=['POST'])
+@app.route('/api/predict', methods=['POST'])
 def predict():
     """Main prediction endpoint using the actual trained model"""
     try:
@@ -204,6 +207,7 @@ def predict():
         }), 500
 
 @app.route('/health', methods=['GET'])
+@app.route('/api/health', methods=['GET'])
 def health():
     """Health check endpoint"""
     try:

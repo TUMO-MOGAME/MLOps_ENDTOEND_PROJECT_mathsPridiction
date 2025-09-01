@@ -13,6 +13,14 @@
   ],
   "routes": [
     {
+      "src": "/api/predict",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/api/health",
+      "dest": "/api/index.py"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/index.py"
     },
