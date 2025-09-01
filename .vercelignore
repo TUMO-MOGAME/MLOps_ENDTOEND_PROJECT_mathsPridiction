@@ -1,0 +1,67 @@
+# Exclude large directories and files that aren't needed for deployment
+src/
+logs/
+notebooks/
+research/
+templates/
+config/
+monitoring/ml_metrics_server.py
+monitoring/prometheus_metrics.py
+
+# Exclude development files
+*.ipynb
+*.log
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Exclude git and IDE files
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Exclude OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Keep only essential artifacts for prediction
+artifacts/data_ingestion/
+artifacts/data_validation/
+artifacts/model_evaluation/
+
+# Exclude large data files
+*.csv
+*.json
+*.txt
+!requirements.txt
+!requirements-vercel.txt
+
+# Exclude documentation
+README.md
+DEPLOYMENT_GUIDE.md

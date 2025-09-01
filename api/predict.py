@@ -4,8 +4,7 @@ This will be deployed as the main user-facing API
 """
 
 from flask import Flask, request, jsonify
-import pickle
-import pandas as pd
+import dill
 import numpy as np
 import os
 import json
@@ -22,7 +21,7 @@ def load_model():
     try:
         if os.path.exists(MODEL_PATH):
             with open(MODEL_PATH, 'rb') as f:
-                model = pickle.load(f)
+                model = dill.load(f)
             return model
         else:
             return None
@@ -32,14 +31,31 @@ def load_model():
 
 def preprocess_input(data):
     """Preprocess input data to match training format"""
-    # Convert to DataFrame
-    df = pd.DataFrame([data])
-    
-    # Apply the same transformations as in training
-    # (You'll need to adapt this based on your actual preprocessing)
-    df = pd.get_dummies(df, drop_first=True)
-    
-    return df
+    # Convert input to numpy array format expected by the model
+    # This is a simplified version - you may need to adjust based on your actual preprocessing
+
+    # Expected features (adjust based on your model's training features)
+    expected_features = [
+        'writing_score', 'reading_score', 'gender_male',
+        'race_ethnicity_group_B', 'race_ethnicity_group_C',
+        'race_ethnicity_group_D', 'race_ethnicity_group_E',
+        'parental_level_of_education_bachelor_degree',
+        'parental_level_of_education_high_school',
+        'parental_level_of_education_master_degree',
+        'parental_level_of_education_some_college',
+        'parental_level_of_education_some_high_school',
+        'lunch_standard', 'test_preparation_course_none'
+    ]
+
+    # Create feature vector
+    features = []
+    for feature in expected_features:
+        if feature in data:
+            features.append(data[feature])
+        else:
+            features.append(0)  # Default value for missing features
+
+    return np.array([features])
 
 @app.route('/api/predict', methods=['POST'])
 def predict():
