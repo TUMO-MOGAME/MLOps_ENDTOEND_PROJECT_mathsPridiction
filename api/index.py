@@ -1,6 +1,5 @@
 """
-Vercel API endpoint for ML model predictions
-This will be deployed as the main user-facing API
+Main API endpoint for Vercel deployment
 """
 
 from flask import Flask, request, jsonify
@@ -10,12 +9,11 @@ import os
 import json
 from datetime import datetime
 
-# Create Flask app
 app = Flask(__name__)
 
-# Load the trained model (you'll need to include this in deployment)
-MODEL_PATH = 'artifacts/model_trainer/model.pkl'
-PREPROCESSOR_PATH = 'artifacts/data_transformation/preprocessor.pkl'
+# Load the trained model
+MODEL_PATH = '../artifacts/model_trainer/model.pkl'
+PREPROCESSOR_PATH = '../artifacts/data_transformation/preprocessor.pkl'
 
 def load_model():
     """Load the trained model"""
@@ -33,12 +31,10 @@ def load_model():
 def preprocess_input(data):
     """Preprocess input data to match training format"""
     # Convert input to numpy array format expected by the model
-    # This is a simplified version - you may need to adjust based on your actual preprocessing
-
     # Expected features (adjust based on your model's training features)
     expected_features = [
-        'writing_score', 'reading_score', 'gender_male',
-        'race_ethnicity_group_B', 'race_ethnicity_group_C',
+        'writing_score', 'reading_score', 'gender_male', 
+        'race_ethnicity_group_B', 'race_ethnicity_group_C', 
         'race_ethnicity_group_D', 'race_ethnicity_group_E',
         'parental_level_of_education_bachelor_degree',
         'parental_level_of_education_high_school',
@@ -47,7 +43,7 @@ def preprocess_input(data):
         'parental_level_of_education_some_high_school',
         'lunch_standard', 'test_preparation_course_none'
     ]
-
+    
     # Create feature vector
     features = []
     for feature in expected_features:
@@ -55,10 +51,24 @@ def preprocess_input(data):
             features.append(data[feature])
         else:
             features.append(0)  # Default value for missing features
-
+    
     return np.array([features])
 
-@app.route('/api/predict', methods=['POST'])
+@app.route('/', methods=['GET'])
+def home():
+    """Home endpoint"""
+    return jsonify({
+        'message': 'ML Pipeline API',
+        'status': 'running',
+        'endpoints': {
+            'predict': '/api/predict (POST)',
+            'health': '/api/health (GET)',
+            'model-info': '/api/model-info (GET)'
+        },
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/predict', methods=['POST'])
 def predict():
     """Main prediction endpoint"""
     try:
@@ -85,9 +95,6 @@ def predict():
         # Make prediction
         prediction = model.predict(processed_data)[0]
         
-        # Log prediction for monitoring
-        log_prediction(data, prediction)
-        
         return jsonify({
             'prediction': float(prediction),
             'input_data': data,
@@ -101,7 +108,7 @@ def predict():
             'status': 'error'
         }), 500
 
-@app.route('/api/health', methods=['GET'])
+@app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
     model = load_model()
@@ -111,62 +118,9 @@ def health():
         'timestamp': datetime.now().isoformat()
     })
 
-@app.route('/api/model-info', methods=['GET'])
-def model_info():
-    """Get model information"""
-    try:
-        # Load evaluation metrics
-        eval_path = 'artifacts/model_evaluation/evaluation_report.json'
-        if os.path.exists(eval_path):
-            with open(eval_path, 'r') as f:
-                metrics = json.load(f)
-        else:
-            metrics = {}
-        
-        return jsonify({
-            'model_metrics': metrics,
-            'model_available': load_model() is not None,
-            'last_updated': datetime.now().isoformat(),
-            'status': 'success'
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'error': str(e),
-            'status': 'error'
-        }), 500
-
-def log_prediction(input_data, prediction):
-    """Log prediction for monitoring (in production, send to monitoring service)"""
-    log_entry = {
-        'timestamp': datetime.now().isoformat(),
-        'input': input_data,
-        'prediction': float(prediction),
-        'model_version': '1.0'
-    }
-    
-    # In production, you'd send this to your monitoring service
-    # For now, we'll just print it
-    print(f"PREDICTION_LOG: {json.dumps(log_entry)}")
-
-# Main handler function for Vercel
+# For Vercel deployment
 def handler(request):
-    """
-    Main entry point for Vercel serverless function
-    This function will handle all requests to this endpoint
-    """
-    with app.test_request_context(request.path, method=request.method,
-                                  data=request.get_data(),
-                                  headers=dict(request.headers)):
-        try:
-            # Process the request through Flask
-            response = app.full_dispatch_request()
-            return response
-        except Exception as e:
-            return jsonify({
-                'error': str(e),
-                'status': 'error'
-            }), 500
+    return app(request.environ, lambda *args: None)
 
 if __name__ == '__main__':
     app.run(debug=True)
