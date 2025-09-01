@@ -3,18 +3,22 @@
   "name": "ml-pipeline-api",
   "builds": [
     {
-      "src": "api/test.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/test.py"
+      "dest": "/api/index.py"
     },
     {
       "src": "/",
-      "dest": "/api/test.py"
+      "dest": "/static/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/static/$1"
     }
   ],
   "env": {
