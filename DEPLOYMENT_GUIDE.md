@@ -27,7 +27,7 @@
    ```bash
    # Ensure you have these files:
    # - api/predict.py (✅ Created)
-   # - vercel.json (✅ Created)
+   # - vercel.json (✅ Fixed - removed functions property)
    # - static/index.html (✅ Created)
    # - requirements-vercel.txt (✅ Created)
    # - artifacts/ folder with your trained model
@@ -40,8 +40,18 @@
 
 4. **Deploy ML API**:
    ```bash
+   # Initialize Vercel project
+   vercel
+
+   # Deploy to production
    vercel --prod
    ```
+
+### **⚠️ Important Fix Applied:**
+The original `vercel.json` had both `builds` and `functions` properties, which caused deployment errors. This has been fixed by:
+- Removing the `functions` property
+- Using modern `rewrites` instead of `routes`
+- Simplified configuration for better compatibility
 
 ### **Step 2: Deploy Monitoring Dashboard**
 
