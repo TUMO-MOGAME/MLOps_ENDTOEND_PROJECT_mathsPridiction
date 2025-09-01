@@ -14,60 +14,98 @@ app = Flask(__name__)
 
 # Model paths - adjusted for Vercel deployment structure
 MODEL_PATH = 'artifacts/model_trainer/model.pkl'
+TRAINING_INFO_PATH = 'artifacts/model_trainer/training_info.pkl'
 PREPROCESSOR_PATH = 'artifacts/data_transformation/preprocessor.pkl'
 
-def load_model():
-    """Load the trained model"""
+# Global variables to cache model and training info
+_model = None
+_training_info = None
+
+def load_model_and_info():
+    """Load the trained model and training info"""
+    global _model, _training_info
+
+    if _model is not None and _training_info is not None:
+        return _model, _training_info
+
     try:
+        # Load training info first to get feature order
+        if os.path.exists(TRAINING_INFO_PATH):
+            with open(TRAINING_INFO_PATH, 'rb') as f:
+                _training_info = pickle.load(f)
+            print(f"Training info loaded: {_training_info}")
+        else:
+            print(f"Training info not found at {TRAINING_INFO_PATH}")
+            return None, None
+
+        # Load the model
         if os.path.exists(MODEL_PATH):
             with open(MODEL_PATH, 'rb') as f:
-                model = pickle.load(f)
-            return model
+                _model = pickle.load(f)
+            print(f"Model loaded successfully")
+            return _model, _training_info
         else:
-            return None
-    except Exception as e:
-        print(f"Error loading model: {e}")
-        return None
+            print(f"Model not found at {MODEL_PATH}")
+            return None, None
 
-def preprocess_input(data):
-    """Preprocess input data to match training format"""
+    except Exception as e:
+        print(f"Error loading model and info: {e}")
+        return None, None
+
+def preprocess_input(data, training_info):
+    """Preprocess input data to match exact training format"""
     try:
-        # Convert form data to model features
+        if training_info is None:
+            print("No training info available, using default preprocessing")
+            return None
+
+        # Get the exact feature order from training
+        feature_columns = training_info['feature_columns']
+        print(f"Expected features: {feature_columns}")
+
+        # Create feature vector in exact order
         features = []
 
-        # Add numeric features
-        features.append(float(data.get('writing_score', 0)))
-        features.append(float(data.get('reading_score', 0)))
+        for feature in feature_columns:
+            if feature == 'gender_male':
+                features.append(1 if data.get('gender') == 'male' else 0)
+            elif feature == 'lunch_standard':
+                features.append(1 if data.get('lunch') == 'standard' else 0)
+            elif feature == "parental_level_of_education_bachelor's degree":
+                features.append(1 if data.get('parental_level_of_education') == "bachelor's degree" else 0)
+            elif feature == 'parental_level_of_education_high school':
+                features.append(1 if data.get('parental_level_of_education') == 'high school' else 0)
+            elif feature == "parental_level_of_education_master's degree":
+                features.append(1 if data.get('parental_level_of_education') == "master's degree" else 0)
+            elif feature == 'parental_level_of_education_some college':
+                features.append(1 if data.get('parental_level_of_education') == 'some college' else 0)
+            elif feature == 'parental_level_of_education_some high school':
+                features.append(1 if data.get('parental_level_of_education') == 'some high school' else 0)
+            elif feature == 'race_ethnicity_group B':
+                features.append(1 if data.get('race_ethnicity') == 'group B' else 0)
+            elif feature == 'race_ethnicity_group C':
+                features.append(1 if data.get('race_ethnicity') == 'group C' else 0)
+            elif feature == 'race_ethnicity_group D':
+                features.append(1 if data.get('race_ethnicity') == 'group D' else 0)
+            elif feature == 'race_ethnicity_group E':
+                features.append(1 if data.get('race_ethnicity') == 'group E' else 0)
+            elif feature == 'reading_score':
+                features.append(float(data.get('reading_score', 0)))
+            elif feature == 'test_preparation_course_none':
+                features.append(1 if data.get('test_preparation_course') == 'none' else 0)
+            elif feature == 'writing_score':
+                features.append(float(data.get('writing_score', 0)))
+            else:
+                # Unknown feature, add 0
+                features.append(0)
+                print(f"Unknown feature: {feature}")
 
-        # Gender encoding (male = 1, female = 0)
-        features.append(1 if data.get('gender') == 'male' else 0)
-
-        # Race/ethnicity one-hot encoding
-        race = data.get('race_ethnicity', '')
-        features.append(1 if race == 'group B' else 0)
-        features.append(1 if race == 'group C' else 0)
-        features.append(1 if race == 'group D' else 0)
-        features.append(1 if race == 'group E' else 0)
-
-        # Parental education one-hot encoding
-        education = data.get('parental_level_of_education', '')
-        features.append(1 if education == "bachelor's degree" else 0)
-        features.append(1 if education == "high school" else 0)
-        features.append(1 if education == "master's degree" else 0)
-        features.append(1 if education == "some college" else 0)
-        features.append(1 if education == "some high school" else 0)
-
-        # Lunch type (standard = 1, free/reduced = 0)
-        features.append(1 if data.get('lunch') == 'standard' else 0)
-
-        # Test preparation (none = 1, completed = 0)
-        features.append(1 if data.get('test_preparation_course') == 'none' else 0)
-
+        print(f"Processed features: {features}")
         return np.array([features])
+
     except Exception as e:
         print(f"Error in preprocessing: {e}")
-        # Return default feature vector if preprocessing fails
-        return np.array([[50, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]])
+        return None
 
 @app.route('/', methods=['GET'])
 def home():
@@ -90,7 +128,7 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    """Main prediction endpoint"""
+    """Main prediction endpoint using the actual trained model"""
     try:
         # Get input data
         data = request.get_json()
@@ -101,35 +139,65 @@ def predict():
                 'status': 'error'
             }), 400
 
-        # For now, return a mock prediction since model loading might fail
-        # This ensures the frontend works while we debug model loading
-        try:
-            model = load_model()
-            if model is not None:
-                # Preprocess input
-                processed_data = preprocess_input(data)
-                # Make prediction
-                prediction = model.predict(processed_data)[0]
-            else:
-                # Mock prediction based on reading and writing scores
-                reading = float(data.get('reading_score', 50))
-                writing = float(data.get('writing_score', 50))
-                prediction = (reading + writing) / 2 + np.random.normal(0, 5)
-        except Exception as model_error:
-            print(f"Model error: {model_error}")
-            # Fallback to mock prediction
+        print(f"Received prediction request: {data}")
+
+        # Load model and training info
+        model, training_info = load_model_and_info()
+
+        if model is None or training_info is None:
+            # Fallback to intelligent mock prediction
             reading = float(data.get('reading_score', 50))
             writing = float(data.get('writing_score', 50))
-            prediction = (reading + writing) / 2 + np.random.normal(0, 5)
+            base_score = (reading + writing) / 2
+
+            # Add some realistic variation based on other factors
+            if data.get('test_preparation_course') == 'completed':
+                base_score += 5
+            if data.get('lunch') == 'free/reduced':
+                base_score -= 3
+            if data.get('parental_level_of_education') in ["bachelor's degree", "master's degree"]:
+                base_score += 4
+
+            prediction = max(0, min(100, base_score + np.random.normal(0, 3)))
+
+            return jsonify({
+                'prediction': float(prediction),
+                'input_data': data,
+                'timestamp': datetime.now().isoformat(),
+                'status': 'success',
+                'model_used': 'fallback_intelligent_mock',
+                'note': 'Using intelligent fallback prediction (model not available)'
+            })
+
+        # Preprocess input using training info
+        processed_data = preprocess_input(data, training_info)
+
+        if processed_data is None:
+            return jsonify({
+                'error': 'Failed to preprocess input data',
+                'status': 'error'
+            }), 400
+
+        # Make prediction using the actual trained model
+        prediction = model.predict(processed_data)[0]
+
+        print(f"Model prediction: {prediction}")
 
         return jsonify({
             'prediction': float(prediction),
             'input_data': data,
             'timestamp': datetime.now().isoformat(),
-            'status': 'success'
+            'status': 'success',
+            'model_used': 'trained_elasticnet',
+            'model_info': {
+                'alpha': training_info.get('alpha'),
+                'l1_ratio': training_info.get('l1_ratio'),
+                'features_used': len(training_info.get('feature_columns', []))
+            }
         })
 
     except Exception as e:
+        print(f"Prediction error: {e}")
         return jsonify({
             'error': str(e),
             'status': 'error'
@@ -139,12 +207,27 @@ def predict():
 def health():
     """Health check endpoint"""
     try:
-        # Check if model file exists without loading it
-        model_exists = os.path.exists(MODEL_PATH)
+        # Check model and training info availability
+        model, training_info = load_model_and_info()
+
+        model_status = {
+            'model_file_exists': os.path.exists(MODEL_PATH),
+            'training_info_exists': os.path.exists(TRAINING_INFO_PATH),
+            'model_loaded': model is not None,
+            'training_info_loaded': training_info is not None
+        }
+
+        if training_info:
+            model_status['model_details'] = {
+                'target_column': training_info.get('target_column'),
+                'feature_count': len(training_info.get('feature_columns', [])),
+                'alpha': training_info.get('alpha'),
+                'l1_ratio': training_info.get('l1_ratio')
+            }
+
         return jsonify({
             'status': 'healthy',
-            'model_file_exists': model_exists,
-            'model_path': MODEL_PATH,
+            'model_status': model_status,
             'timestamp': datetime.now().isoformat()
         })
     except Exception as e:
