@@ -5,6 +5,10 @@
     {
       "src": "api/index.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -14,11 +18,7 @@
     },
     {
       "src": "/",
-      "dest": "/static/index.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/static/$1"
+      "dest": "/index.html"
     }
   ],
   "env": {
