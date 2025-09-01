@@ -1,16 +1,5 @@
-pandas
-numpy
-seaborn
-matplotlib
-xgboost
-scikit-learn
-dill
-Flask
-catboost
-flas
-ipykernel
-ensure
-python-box
-PyYAML
-pandas
--e .
+flask==3.0.0
+pandas==2.1.4
+numpy==1.26.2
+scikit-learn==1.3.2
+dill==0.3.7
