@@ -9,11 +9,12 @@ import os
 import json
 from datetime import datetime
 
+# Create Flask app
 app = Flask(__name__)
 
-# Load the trained model
-MODEL_PATH = '../artifacts/model_trainer/model.pkl'
-PREPROCESSOR_PATH = '../artifacts/data_transformation/preprocessor.pkl'
+# Model paths - adjusted for Vercel deployment structure
+MODEL_PATH = 'artifacts/model_trainer/model.pkl'
+PREPROCESSOR_PATH = 'artifacts/data_transformation/preprocessor.pkl'
 
 def load_model():
     """Load the trained model"""
@@ -57,16 +58,21 @@ def preprocess_input(data):
 @app.route('/', methods=['GET'])
 def home():
     """Home endpoint"""
-    return jsonify({
-        'message': 'ML Pipeline API',
-        'status': 'running',
-        'endpoints': {
-            'predict': '/api/predict (POST)',
-            'health': '/api/health (GET)',
-            'model-info': '/api/model-info (GET)'
-        },
-        'timestamp': datetime.now().isoformat()
-    })
+    try:
+        return jsonify({
+            'message': 'ML Pipeline API',
+            'status': 'running',
+            'endpoints': {
+                'predict': '/predict (POST)',
+                'health': '/health (GET)'
+            },
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'status': 'error'
+        }), 500
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -111,16 +117,23 @@ def predict():
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
-    model = load_model()
-    return jsonify({
-        'status': 'healthy' if model is not None else 'unhealthy',
-        'model_loaded': model is not None,
-        'timestamp': datetime.now().isoformat()
-    })
+    try:
+        # Check if model file exists without loading it
+        model_exists = os.path.exists(MODEL_PATH)
+        return jsonify({
+            'status': 'healthy',
+            'model_file_exists': model_exists,
+            'model_path': MODEL_PATH,
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
 
-# For Vercel deployment
-def handler(request):
-    return app(request.environ, lambda *args: None)
-
+# This is the entry point for Vercel
+# Vercel will automatically handle the WSGI interface
 if __name__ == '__main__':
     app.run(debug=True)
