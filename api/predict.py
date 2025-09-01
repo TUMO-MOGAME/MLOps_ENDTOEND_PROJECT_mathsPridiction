@@ -4,7 +4,7 @@ This will be deployed as the main user-facing API
 """
 
 from flask import Flask, request, jsonify
-import dill
+import pickle
 import numpy as np
 import os
 import json
@@ -21,7 +21,7 @@ def load_model():
     try:
         if os.path.exists(MODEL_PATH):
             with open(MODEL_PATH, 'rb') as f:
-                model = dill.load(f)
+                model = pickle.load(f)
             return model
         else:
             return None
